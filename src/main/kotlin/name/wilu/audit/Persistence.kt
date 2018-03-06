@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2
+import org.springframework.jms.core.JmsTemplate
 import org.springframework.orm.jpa.JpaTransactionManager
 import org.springframework.orm.jpa.JpaVendorAdapter
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
@@ -39,12 +40,18 @@ internal class Jpa {
     }
 
     @Bean
-    fun entityManagerFactory(dataSource: DataSource, vendor: JpaVendorAdapter) =
+    fun entityManagerFactory(dataSource: DataSource,
+                             vendor: JpaVendorAdapter,
+                             auditInterceptor: AuditInterceptor) =
             LocalContainerEntityManagerFactoryBean().apply {
                 this.dataSource = dataSource
                 jpaVendorAdapter = vendor
                 setPackagesToScan("name.wilu")
+                jpaPropertyMap.put("hibernate.ejb.interceptor", auditInterceptor)
             }
+
+    @Bean
+    fun auditInterceptor(jmsTemplate: JmsTemplate) = AuditInterceptor(jmsTemplate)
 
     @Bean
     fun transactionManager(factory: LocalContainerEntityManagerFactoryBean) =
