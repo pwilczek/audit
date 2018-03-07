@@ -50,43 +50,43 @@ internal class AuditRecord {
 
 internal class AuditInterceptor(private val jms : JmsTemplate) : EmptyInterceptor() {
     //
-    private var commands: MutableList<AuditRecord> = mutableListOf() // should be tx scoped
+    private val commands: MutableList<AuditRecord> = mutableListOf() // should be tx scoped
 
-    override fun onSave(entity: Any?,
-                        id: Serializable?,
-                        state: Array<out Any>?,
-                        propertyNames: Array<out String>?,
-                        types: Array<out Type>?): Boolean {
+    override fun onSave(entity: Any,
+                        id: Serializable,
+                        state: Array<out Any>,
+                        propertyNames: Array<out String>,
+                        types: Array<out Type>): Boolean {
         //
-        audited(entity).forEach {
+        auditedFields(entity).forEach {
             commands.add(record(id as Any, null, it.get(entity).toString(), it))
         }
         return false
     }
 
-    override fun onFlushDirty(entity: Any?,
-                              id: Serializable?,
-                              currentState: Array<out Any>?,
-                              previousState: Array<out Any>?,
-                              propertyNames: Array<out String>?,
+    override fun onFlushDirty(entity: Any,
+                              id: Serializable,
+                              currentState: Array<out Any>,
+                              previousState: Array<out Any>,
+                              propertyNames: Array<out String>,
                               types: Array<out Type>?): Boolean {
-        audited(entity).forEach {
+        auditedFields(entity).forEach {
             val auditRequired = auditRequired(it, previousState, currentState, propertyNames)
             if (auditRequired.first) commands.add(record(id as Any, auditRequired.second, it.get(entity).toString(), it))
         }
         return false
     }
 
-    private fun auditRequired(field: Field?, prv: Array<out Any>?, current: Array<out Any>?, props: Array<out String>?): Pair<Boolean, String?> {
-        val index = props!!.indexOf(field!!.name)
-        val old = prv!![index]
-        return when (areEqual(old, current!![index])) {
+    private fun auditRequired(field: Field?, prv: Array<out Any>, current: Array<out Any>, props: Array<out String>): Pair<Boolean, String?> {
+        val index = props.indexOf(field!!.name)
+        val old = prv[index]
+        return when (areEqual(old, current[index])) {
             false -> Pair(true, old.toString())
             else -> Pair(false, null)
         }
     }
 
-    private fun audited(entity: Any?) = entity!!::class.java.declaredFields
+    private fun auditedFields(entity: Any?) = entity!!::class.java.declaredFields
             .filter { it.isAnnotationPresent(Audited::class.java) }
 
     private fun record(topic: Any, oldVal: String?, newVal: String, it: Field) = AuditRecord
@@ -97,6 +97,6 @@ internal class AuditInterceptor(private val jms : JmsTemplate) : EmptyIntercepto
 
     override fun afterTransactionCompletion(tx: Transaction?) {
         if (!tx!!.rollbackOnly) commands.forEach { jms.convertAndSend(AUDIT_QUEUE, it) }
-        commands = mutableListOf() // hack
+        commands.clear()
     }
 }

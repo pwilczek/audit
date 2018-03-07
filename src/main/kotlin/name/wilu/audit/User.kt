@@ -10,11 +10,8 @@ internal open class UserAuditor : Auditor {
     //
     @PersistenceContext
     lateinit var em: EntityManager
-
     //
-    override fun process(record: AuditRecord) = em.run {
-        persist(record)
-    }
+    override fun process(record: AuditRecord) = em.persist(record)
 }
 
 @Entity

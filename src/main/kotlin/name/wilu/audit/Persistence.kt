@@ -13,7 +13,6 @@ import org.springframework.orm.jpa.vendor.Database
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter
 import javax.sql.DataSource
 
-
 @Configuration
 internal open class Database {
 
@@ -46,8 +45,8 @@ internal open class Jpa {
             LocalContainerEntityManagerFactoryBean().apply {
                 this.dataSource = dataSource
                 jpaVendorAdapter = vendor
-                setPackagesToScan("name.wilu")
                 jpaPropertyMap["hibernate.session_factory.interceptor"] = auditInterceptor
+                setPackagesToScan("name.wilu")
             }
 
     @Bean
