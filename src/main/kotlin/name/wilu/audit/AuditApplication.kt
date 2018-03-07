@@ -4,7 +4,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class AuditApplication
+open class AuditApplication
 
 fun main(args: Array<String>) {
     runApplication<AuditApplication>(*args)

@@ -15,46 +15,46 @@ import javax.sql.DataSource
 
 
 @Configuration
-internal class Database {
+internal open class Database {
 
     @Bean
-    fun dataSource() = EmbeddedDatabaseBuilder().setName("db").setType(H2).build()
+    open fun dataSource() = EmbeddedDatabaseBuilder().setName("db").setType(H2).build()
 
     @Bean
-    fun httpServer() = Server
+    open fun httpServer() = Server
             .createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9997").start()
 
     @Bean
-    fun webServer() = Server // jdbc:h2:tcp://localhost:9997/mem:db
+    open fun webServer() = Server // jdbc:h2:tcp://localhost:9997/mem:db
             .createWebServer("-web", "-webAllowOthers", "-webPort", "9998").start()
 }
 
 @Configuration
-internal class Jpa {
+internal open class Jpa {
 
     @Bean
-    fun vendor() = HibernateJpaVendorAdapter().apply {
+    open fun vendor() = HibernateJpaVendorAdapter().apply {
         setDatabase(Database.H2)
         setShowSql(true)
         setGenerateDdl(true)
     }
 
     @Bean
-    fun entityManagerFactory(dataSource: DataSource,
-                             vendor: JpaVendorAdapter,
-                             auditInterceptor: AuditInterceptor) =
+    open fun entityManagerFactory(dataSource: DataSource,
+                                  vendor: JpaVendorAdapter,
+                                  auditInterceptor: AuditInterceptor) =
             LocalContainerEntityManagerFactoryBean().apply {
                 this.dataSource = dataSource
                 jpaVendorAdapter = vendor
                 setPackagesToScan("name.wilu")
-                jpaPropertyMap.put("hibernate.ejb.interceptor", auditInterceptor)
+                jpaPropertyMap["hibernate.session_factory.interceptor"] = auditInterceptor
             }
 
     @Bean
-    fun auditInterceptor(jmsTemplate: JmsTemplate) = AuditInterceptor(jmsTemplate)
+    open fun auditInterceptor(jmsTemplate: JmsTemplate) = AuditInterceptor(jmsTemplate)
 
     @Bean
-    fun transactionManager(factory: LocalContainerEntityManagerFactoryBean) =
+    open fun transactionManager(factory: LocalContainerEntityManagerFactoryBean) =
             JpaTransactionManager().apply {
                 entityManagerFactory = factory.`object`
             }
