@@ -77,13 +77,11 @@ internal class AuditInterceptor(private val jms : JmsTemplate) : EmptyIntercepto
         return false
     }
 
-    private fun auditRequired(field: Field?, prv: Array<out Any>, current: Array<out Any>, props: Array<out String>): Pair<Boolean, String?> {
-        val index = props.indexOf(field!!.name)
+    private fun auditRequired(field: Field, prv: Array<out Any>, current: Array<out Any>, props: Array<out String>): Pair<Boolean, String?> {
+        val index = props.indexOf(field.name)
         val old = prv[index]
-        return when (areEqual(old, current[index])) {
-            false -> Pair(true, old.toString())
-            else -> Pair(false, null)
-        }
+        return if (areEqual(old, current[index])) Pair(false, null) else Pair(true, old.toString()) // old might be null
+                                                                                                    // maybe optional
     }
 
     private fun auditedFields(entity: Any?) = entity!!::class.java.declaredFields
